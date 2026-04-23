@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: toroto
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - toroto_postgis:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d toroto"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/toroto
+      FYRA_API_KEY: ${FYRA_API_KEY:-}
+      FYRA_MODEL: ${FYRA_MODEL:-gpt-oss-20b}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-shot seed job — run with: docker compose run --rm seeder
+  # Mounts the dataset JSON from the host; does not bake it into the image.
+  seeder:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/toroto
+      DATASET_PATH: /seed/geospatial_interventions_dataset.json
+    volumes:
+      - ../data:/seed:ro
+    entrypoint: ["sh", "-c", "alembic upgrade head && python -m scripts.load_dataset"]
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - seed
+
+volumes:
+  toroto_postgis:

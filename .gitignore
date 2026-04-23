@@ -1,0 +1,9 @@
+.DS_Store
+.env
+.venv
+node_modules
+dist
+build
+.wrangler
+__pycache__
+.pytest_cache

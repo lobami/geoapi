@@ -1,0 +1,85 @@
+name: Deploy Backend to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "data/**"
+      - "deploy/vps/**"
+      - ".github/workflows/deploy-backend-vps.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Package backend deploy bundle
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='apps/web/node_modules' \
+            --exclude='apps/web/dist' \
+            --exclude='apps/api/__pycache__' \
+            -czf /tmp/toroto-challenge-vps-repo.tgz \
+            apps deploy data README.md docs .github
+
+      - name: Write VPS env file
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+          FYRA_API_KEY: ${{ secrets.FYRA_API_KEY }}
+          FYRA_BASE_URL: ${{ secrets.FYRA_BASE_URL }}
+          FYRA_MODEL: ${{ secrets.FYRA_MODEL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          cat > /tmp/toroto-challenge-vps.env << EOF
+          POSTGRES_DB=${POSTGRES_DB}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          DATABASE_URL=${DATABASE_URL}
+          ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+          FYRA_API_KEY=${FYRA_API_KEY}
+          FYRA_BASE_URL=${FYRA_BASE_URL}
+          FYRA_MODEL=${FYRA_MODEL}
+          JWT_SECRET=${JWT_SECRET}
+          ENVIRONMENT=production
+          EOF
+
+      - name: Upload bundle to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no /tmp/toroto-challenge-vps-repo.tgz "$VPS_USER@$VPS_HOST:/root/toroto-challenge-vps-repo.tgz"
+          sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no /tmp/toroto-challenge-vps.env "$VPS_USER@$VPS_HOST:/root/toroto-challenge-vps.env"
+
+      - name: Deploy on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            mkdir -p /srv/apps/toroto-challenge/repo
+            rm -rf /srv/apps/toroto-challenge/repo/*
+            tar -xzf /root/toroto-challenge-vps-repo.tgz -C /srv/apps/toroto-challenge/repo
+            cp /root/toroto-challenge-vps.env /srv/apps/toroto-challenge/repo/deploy/vps/.env.production
+            cp /srv/apps/toroto-challenge/repo/deploy/vps/nginx/toroto-test-api.conf /etc/nginx/sites-available/toroto-test-api.conf
+            ln -sf /etc/nginx/sites-available/toroto-test-api.conf /etc/nginx/sites-enabled/toroto-test-api.conf
+            nginx -t
+            systemctl reload nginx
+            chmod +x /srv/apps/toroto-challenge/repo/deploy/vps/remote-deploy.sh
+            /srv/apps/toroto-challenge/repo/deploy/vps/remote-deploy.sh
+          '
