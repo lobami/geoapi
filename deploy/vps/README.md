@@ -4,7 +4,7 @@ Este directorio contiene el despliegue del backend de GeoAPI hacia la VPS compar
 
 ## Dominio esperado
 
-- API: `api-test-geoapi.lobami.lat`
+- API: `api.yourdomain.com`
 
 ## Variables mínimas
 
