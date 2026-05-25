@@ -39,12 +39,12 @@ def authenticate(db: Session, username: str, password: str) -> User | None:
 
 
 def ensure_default_user(db: Session) -> None:
-    exists = db.execute(select(User).where(User.username == "toroto")).scalar_one_or_none()
+    exists = db.execute(select(User).where(User.username == "admin")).scalar_one_or_none()
     if not exists:
         db.add(User(
             id=str(uuid.uuid4()),
-            username="toroto",
-            hashed_password=hash_password("toroto573"),
+            username="admin",
+            hashed_password=hash_password("geoapi2025"),
             role="admin",
         ))
         db.commit()

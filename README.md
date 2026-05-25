@@ -1,87 +1,126 @@
-# Toroto — Plataforma geoespacial territorial
+# GeoAPI — Geospatial Platform Template
 
-Monorepo de una plataforma geoespacial para operar intervenciones territoriales con API, mapas, autenticación y consultas asistidas por IA.
+Stack: FastAPI + PostGIS + React + MapLibre GL
 
-- `apps/api` — API FastAPI + PostGIS con autenticación JWT
-- `apps/web` — frontend React con MapLibre GL y consultas en lenguaje natural
-- `deploy/vps` — configuración Docker + Nginx para VPS
-- `docs` — arquitectura, trade-offs y capa de IA
+## Features
 
-## Stack
+- REST API con consultas geoespaciales (nearest neighbor, radius, polygon containment)
+- Capa de lenguaje natural con LLM: extracción de intent estructurado → PostGIS
+- Frontend React con mapa interactivo (MapLibre GL) y filtros operativos
+- Autenticación JWT con bcrypt
+- Migraciones automáticas con Alembic
+- Deploy via Docker Compose + Nginx (VPS) y Cloudflare Pages (frontend/edge)
+- CI/CD con GitHub Actions
 
-| Capa | Tecnología |
+## Quick start (local)
+
+```bash
+# 1. Copiar variables de entorno
+cp deploy/vps/.env.example infra/.env
+
+# 2. Levantar API + base de datos
+docker compose -f infra/docker-compose.yml up -d
+
+# 3. Cargar dataset (primera vez)
+docker compose -f infra/docker-compose.yml run --rm seeder
+
+# 4. Frontend (en otra terminal)
+cd apps/web
+npm install
+npm run dev
+```
+
+La API queda disponible en `http://localhost:8000`.
+El frontend en `http://localhost:5173`.
+
+Credenciales por defecto: `admin` / `geoapi2025`
+
+## Estructura
+
+```
+.
+├── apps/
+│   ├── api/          # FastAPI + PostGIS (Python 3.12)
+│   │   ├── app/
+│   │   │   ├── routers/      # endpoints REST
+│   │   │   ├── services/     # lógica de negocio (auth, geospatial, nl_query)
+│   │   │   ├── models/       # SQLAlchemy + GeoAlchemy2
+│   │   │   └── schemas/      # Pydantic
+│   │   ├── migrations/       # Alembic
+│   │   └── scripts/          # seed de datos
+│   ├── api-edge/     # Cloudflare Worker (proxy CORS)
+│   └── web/          # React 19 + Vite + MapLibre GL
+├── data/             # Dataset JSON de intervenciones
+├── deploy/
+│   └── vps/          # Docker Compose + Nginx + scripts de deploy
+├── infra/            # Docker Compose local (dev)
+└── .github/
+    └── workflows/    # CI/CD pipelines
+```
+
+## Variables de entorno
+
+Copiar `deploy/vps/.env.example` y ajustar:
+
+```env
+POSTGRES_DB=geoapi
+POSTGRES_USER=geoapi
+POSTGRES_PASSWORD=<contraseña segura>
+DATABASE_URL=postgresql+psycopg://geoapi:<password>@postgres:5432/geoapi
+ALLOWED_ORIGINS=https://<tu-dominio>,http://localhost:5173
+FYRA_API_KEY=<opcional — habilita extracción de intent con LLM>
+FYRA_BASE_URL=https://api.fyra.im/v1
+FYRA_MODEL=gpt-oss-20b
+JWT_SECRET=<secreto aleatorio largo>
+ENVIRONMENT=production
+```
+
+Si `FYRA_API_KEY` no está seteado, el sistema usa un parser heurístico regex como fallback automático.
+
+## Consultas geoespaciales disponibles
+
+| Endpoint | Descripción |
 |---|---|
-| API | FastAPI 0.116, Python 3.12 |
-| Base de datos | PostgreSQL 16 + PostGIS, GeoAlchemy2 |
-| Migraciones | Alembic (idempotente) |
-| Auth | JWT (PyJWT) + bcrypt (passlib) |
-| Modelo IA | GPT-OSS-20B vía Fyra, fallback heurístico |
-| Frontend | React 19, Vite, MapLibre GL |
-| Deploy | Docker Compose + Nginx (VPS), Cloudflare Pages (web) |
-| CI/CD | GitHub Actions |
-
-## Consultas disponibles
-
-- `POST /auth/login` — autenticación, devuelve JWT Bearer
-- `POST /geospatial/nearest` — intervención más cercana a una coordenada
-- `GET /geospatial/nearest-to-place?place=guanajuato` — más cercana a un lugar de referencia
-- `GET /geospatial/farthest-from-place?place=cancun` — más lejana desde un lugar
-- `POST /geospatial/within-radius` — intervenciones dentro de un radio en km
-- `POST /geospatial/within-area` — intervenciones dentro de un polígono
-- `GET /geospatial/count-by-region` — agregados por región operativa
-- `POST /geospatial/ask` — consulta en lenguaje natural con intención estructurada
+| `POST /auth/login` | Autenticación, devuelve JWT Bearer |
+| `POST /geospatial/nearest` | Intervención más cercana a una coordenada |
+| `GET /geospatial/nearest-to-place?place=<lugar>` | Más cercana a un lugar de referencia |
+| `GET /geospatial/farthest-from-place?place=<lugar>` | Más lejana desde un lugar |
+| `POST /geospatial/within-radius` | Intervenciones dentro de un radio en km |
+| `POST /geospatial/within-area` | Intervenciones dentro de un polígono |
+| `GET /geospatial/count-by-region` | Agregados por región operativa |
+| `POST /geospatial/ask` | Consulta en lenguaje natural con intent estructurado |
 
 Todos los endpoints `/geospatial/*` requieren `Authorization: Bearer <token>`.
 
 ## Arquitectura de la capa de IA
 
-El flujo de `/ask` nunca genera SQL. El modelo extrae una `GeoIntent` (JSON estructurado), y la API ejecuta la consulta PostGIS determinística correspondiente:
+El endpoint `/ask` nunca genera SQL directamente. El modelo extrae un `GeoIntent` (JSON estructurado), y la API ejecuta la consulta PostGIS determinística correspondiente:
 
 ```
 pregunta → LLM (GeoIntent) → query PostGIS → resultado
-                ↓ falla
+                ↓ falla o sin API key
            heurístico regex → GeoIntent
 ```
 
 Esto hace la capa de IA auditable, testeable y predecible.
 
-## Deploy
-
-- Frontend: `test-toroto.lobami.lat` (Cloudflare Pages)
-- API: `api-test-toroto.lobami.lat` (VPS + Nginx)
-
-### Variables de entorno requeridas (VPS)
-
-```
-DATABASE_URL=postgresql+psycopg://user:pass@db:5432/toroto
-ALLOWED_ORIGINS=https://test-toroto.lobami.lat
-FYRA_API_KEY=...
-FYRA_BASE_URL=https://api.fyra.im/v1
-FYRA_MODEL=gpt-oss-20b
-JWT_SECRET=<secreto aleatorio largo>
-```
-
-Configurar `JWT_SECRET` como GitHub Secret (`JWT_SECRET`) antes del primer deploy.
-
-### Primer deploy con datos
+## Deploy en VPS
 
 ```bash
-# Deploy normal (solo migraciones + rebuild)
-deploy/vps/remote-deploy.sh
-
-# Carga inicial de datos (solo primera vez o reset)
-deploy/vps/remote-seed.sh
+# Primer deploy con datos
+deploy/vps/remote-deploy.sh   # build + restart
+deploy/vps/remote-seed.sh     # carga inicial de datos (solo primera vez)
 ```
 
-Las migraciones corren automáticamente al iniciar el contenedor. El usuario `toroto` se crea en el primer arranque si no existe.
+Las migraciones corren automáticamente al iniciar el contenedor.
 
-### Acceso demo
+### Secretos de GitHub Actions requeridos
 
-| Campo | Valor |
-|---|---|
-| Usuario | `toroto` |
-| Contraseña | `toroto573` |
-
-## Datos
-
-~1000 intervenciones territoriales sintéticas distribuidas en todas las regiones de México, más 51 lugares de referencia (28 estados + 23 ciudades principales).
+```
+VPS_HOST, VPS_USER, VPS_PASSWORD
+POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, DATABASE_URL
+ALLOWED_ORIGINS, FYRA_API_KEY, FYRA_BASE_URL, FYRA_MODEL
+JWT_SECRET
+VITE_API_URL
+CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+```

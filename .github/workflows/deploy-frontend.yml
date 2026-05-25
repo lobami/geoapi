@@ -43,4 +43,4 @@ jobs:
         run: npm install --no-save wrangler@4.80.0
 
       - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy apps/web/dist --project-name=test-toroto --branch=main --commit-dirty=true
+        run: npx wrangler pages deploy apps/web/dist --project-name=test-geoapi --branch=main --commit-dirty=true

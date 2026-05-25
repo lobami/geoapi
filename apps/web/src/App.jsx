@@ -208,9 +208,9 @@ function Dashboard({ onLogout }) {
       <header className="topbar-slim">
         <div className="brand-inline">
           <div className="brand-mark-sm"><span /></div>
-          <span className="brand-name">Toroto</span>
+          <span className="brand-name">GeoAPI</span>
           <span className="brand-sep">·</span>
-          <span className="brand-sub">Un futuro compatible con la vida</span>
+          <span className="brand-sub">Geospatial Intervention Platform</span>
         </div>
         <div className="brand-badge" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <strong>FastAPI · PostGIS · GPT-OSS-20B · React</strong>

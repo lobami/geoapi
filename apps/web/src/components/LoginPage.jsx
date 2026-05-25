@@ -45,9 +45,9 @@ export default function LoginPage({ onLogin }) {
       <div className="login-card">
         <div className="brand-inline" style={{ marginBottom: '28px' }}>
           <div className="brand-mark-sm"><span /></div>
-          <span className="brand-name">Toroto</span>
+          <span className="brand-name">GeoAPI</span>
           <span className="brand-sep">·</span>
-          <span className="brand-sub">Un futuro compatible con la vida</span>
+          <span className="brand-sub">Geospatial Intervention Platform</span>
         </div>
 
         <form onSubmit={handleSubmit}>

@@ -1,11 +1,11 @@
-const UPSTREAM_BASE = 'http://toroto-origin.lobami.lat'
+const UPSTREAM_BASE = 'http://geoapi-origin.lobami.lat'
 const ALLOWED_ORIGINS = new Set([
-  'https://test-toroto.lobami.lat',
+  'https://test-geoapi.lobami.lat',
   'http://localhost:5173',
 ])
 
 function corsHeaders(origin) {
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://test-toroto.lobami.lat'
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://test-geoapi.lobami.lat'
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,

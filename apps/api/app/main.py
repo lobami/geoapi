@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Toroto Geospatial API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="GeoAPI Geospatial Platform", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

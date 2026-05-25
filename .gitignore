@@ -7,3 +7,12 @@ build
 .wrangler
 __pycache__
 .pytest_cache
+# TestSprite local artifacts
+.testsprite/
+testsprite_tests/
+TestSprite_MCP_Test_Report.md
+TestSprite_MCP_Test_Report.html
+TestSprite_MCP_Test_Report.pdf
+testsprite_frontend_test_plan.json
+testsprite_backend_test_plan.json
+standard_prd.json

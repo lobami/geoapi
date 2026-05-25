@@ -31,4 +31,4 @@ jobs:
         run: npm install --no-save wrangler@4.80.0
 
       - name: Deploy edge proxy
-        run: npx wrangler pages deploy apps/api-edge --project-name=api-test-toroto --branch=main --commit-dirty=true
+        run: npx wrangler pages deploy apps/api-edge --project-name=api-test-geoapi --branch=main --commit-dirty=true

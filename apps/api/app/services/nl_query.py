@@ -9,11 +9,11 @@ from app.schemas.geospatial import GeoIntent
 from app.services.places import find_place_in_text
 
 
-SYSTEM_PROMPT = """You are a geospatial query interpreter for Toroto, a territorial intervention platform in Mexico.
+SYSTEM_PROMPT = """You are a geospatial query interpreter for GeoAPI, a geospatial intervention platform.
 Convert natural-language questions into a structured JSON intent that drives a PostGIS query engine.
 
 Dataset context:
-- ~1000 territorial interventions across Mexico, distributed across all regions
+- ~1000 territorial interventions distributed across all regions
 - Date range: January 2025 – April 2026
 - Subtypes: gavion, zanja, reforestacion, presa_filtrante, muestreo_biodiversidad, bordo, terraza, muestreo_suelo
 - Statuses: planned, in_progress, completed, validated
@@ -83,7 +83,7 @@ def _fyra_intent(question: str) -> GeoIntent:
     headers = {
         "Authorization": f"Bearer {settings.fyra_api_key}",
         "Content-Type": "application/json",
-        "User-Agent": "toroto-challenge/1.0",
+        "User-Agent": "geoapi/1.0",
     }
     with httpx.Client(timeout=25.0) as client:
         response = client.post(f"{settings.fyra_base_url}/chat/completions", headers=headers, json=payload)

@@ -2,15 +2,15 @@ services:
   db:
     image: postgis/postgis:16-3.4
     environment:
-      POSTGRES_DB: toroto
+      POSTGRES_DB: geoapi
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - toroto_postgis:/var/lib/postgresql/data
+      - geoapi_postgis:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d toroto"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d geoapi"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -20,7 +20,7 @@ services:
       context: ..
       dockerfile: apps/api/Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/toroto
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/geoapi
       FYRA_API_KEY: ${FYRA_API_KEY:-}
       FYRA_MODEL: ${FYRA_MODEL:-gpt-oss-20b}
     ports:
@@ -36,7 +36,7 @@ services:
       context: ..
       dockerfile: apps/api/Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/toroto
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/geoapi
       DATASET_PATH: /seed/geospatial_interventions_dataset.json
     volumes:
       - ../data:/seed:ro
@@ -48,4 +48,4 @@ services:
       - seed
 
 volumes:
-  toroto_postgis:
+  geoapi_postgis:

@@ -27,7 +27,7 @@ jobs:
             --exclude='apps/web/node_modules' \
             --exclude='apps/web/dist' \
             --exclude='apps/api/__pycache__' \
-            -czf /tmp/toroto-challenge-vps-repo.tgz \
+            -czf /tmp/geoapi-vps-repo.tgz \
             apps deploy data README.md docs .github
 
       - name: Write VPS env file
@@ -42,7 +42,7 @@ jobs:
           FYRA_MODEL: ${{ secrets.FYRA_MODEL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
-          cat > /tmp/toroto-challenge-vps.env << EOF
+          cat > /tmp/geoapi-vps.env << EOF
           POSTGRES_DB=${POSTGRES_DB}
           POSTGRES_USER=${POSTGRES_USER}
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -61,8 +61,8 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no /tmp/toroto-challenge-vps-repo.tgz "$VPS_USER@$VPS_HOST:/root/toroto-challenge-vps-repo.tgz"
-          sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no /tmp/toroto-challenge-vps.env "$VPS_USER@$VPS_HOST:/root/toroto-challenge-vps.env"
+          sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no /tmp/geoapi-vps-repo.tgz "$VPS_USER@$VPS_HOST:/root/geoapi-vps-repo.tgz"
+          sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no /tmp/geoapi-vps.env "$VPS_USER@$VPS_HOST:/root/geoapi-vps.env"
 
       - name: Deploy on VPS
         env:
@@ -72,14 +72,14 @@ jobs:
         run: |
           sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
-            mkdir -p /srv/apps/toroto-challenge/repo
-            rm -rf /srv/apps/toroto-challenge/repo/*
-            tar -xzf /root/toroto-challenge-vps-repo.tgz -C /srv/apps/toroto-challenge/repo
-            cp /root/toroto-challenge-vps.env /srv/apps/toroto-challenge/repo/deploy/vps/.env.production
-            cp /srv/apps/toroto-challenge/repo/deploy/vps/nginx/toroto-test-api.conf /etc/nginx/sites-available/toroto-test-api.conf
-            ln -sf /etc/nginx/sites-available/toroto-test-api.conf /etc/nginx/sites-enabled/toroto-test-api.conf
+            mkdir -p /srv/apps/geoapi/repo
+            rm -rf /srv/apps/geoapi/repo/*
+            tar -xzf /root/geoapi-vps-repo.tgz -C /srv/apps/geoapi/repo
+            cp /root/geoapi-vps.env /srv/apps/geoapi/repo/deploy/vps/.env.production
+            cp /srv/apps/geoapi/repo/deploy/vps/nginx/geoapi.conf /etc/nginx/sites-available/geoapi-test-api.conf
+            ln -sf /etc/nginx/sites-available/geoapi-test-api.conf /etc/nginx/sites-enabled/geoapi-test-api.conf
             nginx -t
             systemctl reload nginx
-            chmod +x /srv/apps/toroto-challenge/repo/deploy/vps/remote-deploy.sh
-            /srv/apps/toroto-challenge/repo/deploy/vps/remote-deploy.sh
+            chmod +x /srv/apps/geoapi/repo/deploy/vps/remote-deploy.sh
+            /srv/apps/geoapi/repo/deploy/vps/remote-deploy.sh
           '

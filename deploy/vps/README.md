@@ -1,10 +1,10 @@
 # VPS deploy
 
-Este directorio contiene el despliegue del backend de la prueba de Toroto hacia la VPS compartida.
+Este directorio contiene el despliegue del backend de GeoAPI hacia la VPS compartida.
 
 ## Dominio esperado
 
-- API: `api-test-toroto.lobami.lat`
+- API: `api-test-geoapi.lobami.lat`
 
 ## Variables mínimas
 

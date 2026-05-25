@@ -1,4 +1,4 @@
-const KEY = 'toroto_token'
+const KEY = 'geoapi_token'
 
 export function getToken() {
   return localStorage.getItem(KEY)
